@@ -1,0 +1,12 @@
+[package]
+name = "circles"
+version = "0.1.0"
+authors = ["James Baum <james@jamestease.co.uk>"]
+
+[dependencies]
+image = "0.18"
+piston_window = "0.77"
+vecmath = "0.3"
+
+png = "0.11"
+cairo-rs = { version = "0.3", features = ["png"] }
