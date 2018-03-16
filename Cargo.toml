@@ -10,3 +10,4 @@ vecmath = "0.3"
 
 png = "0.11"
 cairo-rs = { version = "0.3", features = ["png"] }
+rand = "0.4"
