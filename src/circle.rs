@@ -20,6 +20,7 @@ impl Circle {
         let mut rng = rand::thread_rng();
 
         let colour = (between.ind_sample(&mut rng), between.ind_sample(&mut rng), between.ind_sample(&mut rng));
+        // let colour = (x / 400.0, y / 600.0, between.ind_sample(&mut rng));
 
         Circle::new_with_colour(x, y, radius, colour)
     }
