@@ -67,31 +67,31 @@ fn main() {
 
     let mut failed_tries = 0;
 
-    for _ in 0..20000 {
+    for _ in 0..2_000_000 {
         let between = Range::new(0.0, WIDTH as f64);
         let between_y = Range::new(0.0, HEIGHT as f64);
 
         let x = between.ind_sample(&mut rng);
         let y = between_y.ind_sample(&mut rng);
 
-        let x_points = vec![32.0, 32.0, 128.0, 128.0];
-        let y_points = vec![32.0, 120.0, 32.0, 120.0];
+        let x_points = vec![32.0, 200.0, 200.0, 32.0];
+        let y_points = vec![200.0, 200.0, 32.0, 32.0];
 
         let circle = Circle::new(x, y, radius);
 
-        if is_valid(&circle, &circles) {
-                // if !(collision(&circle, &circles)) {
-            circles.push(circle);
-                // }
-        } else {
-        // if in_polygon(x_points, y_points, circle.x, circle.y) {
-        //     if !(collision(&circle, &circles)) {
-        //         circles.push(circle);
-        //     }
+        // if is_valid(&circle, &circles) {
+        //     circles.push(circle);
         // } else {
-            println!("{:?} {:?}", failed_tries, (32 * 1024) as f64 / radius);
+        if in_polygon(x_points, y_points, circle.x, circle.y) {
+            if !(collision(&circle, &circles)) {
+                circles.push(circle);
+            }
+        } else {
             failed_tries += 1;
-            if failed_tries as f64 > (32 * 1024) as f64 / radius {
+            if failed_tries as f64 > (24 * 1024) as f64 / radius {
+
+                println!("{:?} {:?}", failed_tries, (24 * 1024) as f64 / radius);
+
                 radius /= 2.0;
                 failed_tries = 0;
 
