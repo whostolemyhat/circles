@@ -5,7 +5,7 @@ use cairo::{ Context };
 use rand::distributions::{ IndependentSample, Range };
 use utils;
 
-const MARGIN: f64 = 2.0;
+const MARGIN: f64 = 0.5;
 
 pub struct Circle {
     colour: (f64, f64, f64),
