@@ -20,6 +20,7 @@ http://gtk-rs.org/docs/cairo/struct.Context.html#method.set_source_rgb
 - params - take in shape co-ords, options (circle/shape), base colour, size
 - quad-tree
 - better colour randomisation
+- allow overlap
 
 ## Nice links
 
