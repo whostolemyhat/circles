@@ -8,7 +8,7 @@ use std::fs::File;
 
 pub mod circle;
 pub mod utils;
-use circle::Circle;
+use circle::{ Circle, Rgb };
 
 const RADIUS_MIN: f64 = 2.0;
 
@@ -66,6 +66,20 @@ fn main() {
 
     let mut failed_tries = 0;
 
+    let colour_range = Range::new(0.0, 1.0);
+
+    let colour = Rgb {
+        r: colour_range.ind_sample(&mut rng),
+        g: colour_range.ind_sample(&mut rng),
+        b: colour_range.ind_sample(&mut rng)
+    };
+
+    // let colour = Rgb {
+    //     r: 0.8,
+    //     g: 0.2,
+    //     b: 0.1
+    // };
+
     for _ in 0..2_000_000 {
         let between = Range::new(0.0, WIDTH as f64);
         let between_y = Range::new(0.0, HEIGHT as f64);
@@ -82,19 +96,18 @@ fn main() {
         // let y_points = vec![32.0, 100.0, 32.0];
 
         // star
-        let x_points = vec![0.0, 75.0, 100.0, 125.0, 200.0, 150.0, 160.0, 100.0, 40.0, 50.0, 0.0];
+        let x_points = vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0];
         let y_points = vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0];
+        let circle = Circle::new(x, y, radius, &colour);
 
-        let circle = Circle::new(x, y, radius);
-
-        if is_valid(&circle, &circles) {
-            circles.push(circle);
-        } else {
-        // if in_polygon(x_points, y_points, circle.x, circle.y) {
-        //     if !(collision(&circle, &circles)) {
-        //         circles.push(circle);
-        //     }
+        // if is_valid(&circle, &circles) {
+        //     circles.push(circle);
         // } else {
+        if in_polygon(x_points, y_points, circle.x, circle.y) {
+            if !(collision(&circle, &circles)) {
+                circles.push(circle);
+            }
+        } else {
             failed_tries += 1;
             if failed_tries as f64 > (32 * 1024) as f64 / radius {
                 radius /= 2.0;
