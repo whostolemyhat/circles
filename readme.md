@@ -10,9 +10,20 @@ http://gtk-rs.org/docs/cairo/struct.Context.html#method.set_source_rgb
 ## in circles
 ![](example.png)
 ![](example2.png)
+![](circles3.png)
 
 ## in polyhedrons
 ![](star.png)
+
+## inverse
+![](invert.png)
+![](triinvertcircle.png)
+![](inverttri.png)
+![](circlesinvert2.png)
+
+## triangles
+![](triangles.png)
+![](tritri.png)
 
 ### TODO
 - loads of tidying
@@ -21,6 +32,8 @@ http://gtk-rs.org/docs/cairo/struct.Context.html#method.set_source_rgb
 - quad-tree
 - better colour randomisation
 - allow overlap
+- colour gradiation
+- improve triangle speed
 
 ## Nice links
 

@@ -2,11 +2,12 @@ extern crate cairo;
 extern crate rand;
 
 use cairo::{ Context };
-use rand::distributions::{ IndependentSample, Range };
-use utils;
+// use rand::distributions::{ IndependentSample, Range };
+use utils::{ Point, dist };
 use colour::Rgb;
 use Collides;
 use HasSize;
+use HasPoint;
 
 const MARGIN: f64 = 0.5;
 
@@ -46,8 +47,14 @@ impl HasSize for Circle {
     }
 }
 
-impl Collides<Self> for Circle {
-    fn collides(&self, other: &Self) -> bool {
-        utils::dist(self.x, self.y, other.x, other.y) < (self.radius + other.size() + MARGIN)
+impl HasPoint for Circle {
+    fn get_point(&self) -> Point {
+        Point { x: self.x, y: self. y }
+    }
+}
+
+impl Collides<Circle> for Circle {
+    fn collides(&self, other: &Circle) -> bool {
+        dist(self.x, self.y, other.x, other.y) < (self.radius + other.size() + MARGIN)
     }
 }

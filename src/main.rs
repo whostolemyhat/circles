@@ -12,6 +12,7 @@ pub mod utils;
 pub mod colour;
 
 use circle::Circle;
+use utils::Point;
 use triangle::Triangle;
 use colour::Rgb;
 
@@ -28,18 +29,19 @@ trait HasSize {
     fn size(&self) -> f64;
 }
 
-// fn in_circle(circle: &Circle, circles: &Vec<Circle>) -> bool {
-    // let CONTAINER_RADIUS: f64 = 180.0;
-//     if utils::dist(circle.x, circle.y, WIDTH as f64 / 2.0, HEIGHT as f64 / 2.0) > CONTAINER_RADIUS {
-//         return false;
-//     }
+trait HasPoint {
+    fn get_point(&self) -> Point;
+}
 
-//     if collision(&circle, &circles) {
-//         return false;
-//     }
+fn in_circle<T>(circle: &T) -> bool where T: HasPoint {
+    let container_radius: f64 = 180.0;
+    let point = circle.get_point();
+    if utils::dist(point.x, point.y, WIDTH as f64 / 2.0, HEIGHT as f64 / 2.0) > container_radius {
+        return false;
+    }
 
-//     true
-// }
+    true
+}
 
 fn collision<T: Collides<T>>(circle: &T, shapes: &Vec<T>) -> bool where T: HasSize{
     for s in shapes {
@@ -51,6 +53,10 @@ fn collision<T: Collides<T>>(circle: &T, shapes: &Vec<T>) -> bool where T: HasSi
 }
 
 fn in_polygon(polygon_x_points: Vec<f64>, polygon_y_points: Vec<f64>, x: f64, y: f64) -> bool {
+    // if polygon_x_points.len() == 0 && polygon_y_points.len() == 0 {
+    //     return false;
+    // }
+
     let mut c = false;
     let mut j = polygon_x_points.len() - 1;
 
@@ -74,8 +80,8 @@ fn main() {
     let surface = ImageSurface::create(Format::ARgb32, WIDTH, HEIGHT)
         .expect("Couldn't create surface");
     let context = Context::new(&surface);
-    // let mut circles: Vec<Circle> = vec![];
-    let mut circles: Vec<Triangle> = vec![];
+    let mut circles: Vec<Circle> = vec![];
+    // let mut circles: Vec<Triangle> = vec![];
     let mut rng = rand::thread_rng();
 
     let mut failed_tries = 0;
@@ -95,8 +101,8 @@ fn main() {
     // };
 
 
-    for _ in 0..2_000_000 {
-    // for i in 0..40 {
+    // for _ in 0..2_000_000 {
+    for _ in 0..80000 {
         let between = Range::new(0.0, WIDTH as f64);
         let between_y = Range::new(0.0, HEIGHT as f64);
 
@@ -105,16 +111,20 @@ fn main() {
 
         // containers - for circle use in_circle not in_polygon
         // rect
-        let x_points = vec![150.0, 450.0, 450.0, 150.0];
-        let y_points = vec![300.0, 300.0, 100.0, 100.0];
+        // let x_points = vec![150.0, 450.0, 450.0, 150.0];
+        // let y_points = vec![300.0, 300.0, 100.0, 100.0];
 
         // triangle
-        // let x_points = vec![32.0, 100.0, 100.0];
-        // let y_points = vec![32.0, 100.0, 32.0];
+        // let x_points = vec![32.0, 200.0, 200.0];
+        // let y_points = vec![32.0, 200.0, 32.0];
 
         // star
         // let x_points = vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0];
         // let y_points = vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0];
+
+        // nothing
+        let x_points = vec![0.0, 600.0];
+        let y_points = vec![0.0, 400.0];
 
         let between = Range::new(0.0, 0.6);
         let darken_between = Range::new(0.4, 1.0);
@@ -126,17 +136,19 @@ fn main() {
             _ => Rgb { r: colour.r, g: colour.g, b: colour.b }
         };
 
-        // let circle = Circle::new(x, y, radius, colour_wobble);
-        let circle = Triangle { x, y, size: radius, colour: colour_wobble };
+        let circle = Circle::new(x, y, radius, colour_wobble);
+        // let circle = Triangle { x, y, size: radius, colour: colour_wobble };
 
-        // if in_circle(&circle, &circles) {
-        //     circles.push(circle);
-        // } else {
-        if in_polygon(x_points, y_points, circle.x, circle.y) {
-            if !(collision(&circle, &circles)) {
+        if !in_circle(&circle) {
+            if !collision(&circle, &circles) {
                 circles.push(circle);
             }
         } else {
+        // if in_polygon(x_points, y_points, circle.x, circle.y) {
+        //     if !collision(&circle, &circles) {
+        //         circles.push(circle);
+        //     }
+        // } else {
             failed_tries += 1;
             if failed_tries as f64 > (32 * 1024) as f64 / radius {
                 radius /= 2.0;

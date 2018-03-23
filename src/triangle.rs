@@ -5,7 +5,9 @@ use colour::Rgb;
 use cairo::{ Context };
 use Collides;
 use HasSize;
+use HasPoint;
 // use self::nalgebra::{ Matrix2x3, Matrix1x3 };
+use utils::Point;
 
 #[derive(Debug)]
 pub struct Triangle {
@@ -42,18 +44,18 @@ impl HasSize for Triangle {
     }
 }
 
+impl HasPoint for Triangle {
+    fn get_point(&self) -> Point {
+        Point { x: self.x, y: self.y }
+    }
+}
+
 fn dot(u: &Vec<f64>, v: &Vec<f64>) -> f64 {
     u[0] * v[0] + u[1] * v[1]
 }
 
 fn make_product(from: &Point, to: &Point) -> Vec<f64> {
     vec![to.x - from.x, to.y - from.y]
-}
-
-#[derive(Debug)]
-pub struct Point {
-    pub x: f64,
-    pub y: f64
 }
 
 // point: point to check
