@@ -7,3 +7,4 @@ authors = ["James Baum <james@jamestease.co.uk>"]
 png = "0.11"
 cairo-rs = { version = "0.3", features = ["png"] }
 rand = "0.4"
+nalgebra = "0.14"

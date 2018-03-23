@@ -7,30 +7,43 @@ use cairo::{ ImageSurface, Format, Context };
 use std::fs::File;
 
 pub mod circle;
+pub mod triangle;
 pub mod utils;
-use circle::{ Circle, Rgb };
+pub mod colour;
+
+use circle::Circle;
+use triangle::Triangle;
+use colour::Rgb;
 
 const RADIUS_MIN: f64 = 2.0;
 
 const WIDTH: i32 = 600;
 const HEIGHT: i32 = 400;
-const CONTAINER_RADIUS: f64 = 180.0;
 
-fn is_valid(circle: &Circle, circles: &Vec<Circle>) -> bool {
-    if utils::dist(circle.x, circle.y, WIDTH as f64 / 2.0, HEIGHT as f64 / 2.0) > CONTAINER_RADIUS {
-        return false;
-    }
-
-    if collision(&circle, &circles) {
-        return false;
-    }
-
-    true
+trait Collides<T: HasSize> {
+    fn collides(&self, other: &T) -> bool;
 }
 
-fn collision(circle: &Circle, circles: &Vec<Circle>) -> bool {
-    for c in circles {
-        if circle.collides(c) {
+trait HasSize {
+    fn size(&self) -> f64;
+}
+
+// fn in_circle(circle: &Circle, circles: &Vec<Circle>) -> bool {
+    // let CONTAINER_RADIUS: f64 = 180.0;
+//     if utils::dist(circle.x, circle.y, WIDTH as f64 / 2.0, HEIGHT as f64 / 2.0) > CONTAINER_RADIUS {
+//         return false;
+//     }
+
+//     if collision(&circle, &circles) {
+//         return false;
+//     }
+
+//     true
+// }
+
+fn collision<T: Collides<T>>(circle: &T, shapes: &Vec<T>) -> bool where T: HasSize{
+    for s in shapes {
+        if circle.collides(s) {
             return true;
         }
     }
@@ -56,12 +69,13 @@ fn in_polygon(polygon_x_points: Vec<f64>, polygon_y_points: Vec<f64>, x: f64, y:
 }
 
 fn main() {
-    let mut radius = 16.0;
+    let mut radius = 32.0;
 
     let surface = ImageSurface::create(Format::ARgb32, WIDTH, HEIGHT)
         .expect("Couldn't create surface");
     let context = Context::new(&surface);
-    let mut circles: Vec<Circle> = vec![];
+    // let mut circles: Vec<Circle> = vec![];
+    let mut circles: Vec<Triangle> = vec![];
     let mut rng = rand::thread_rng();
 
     let mut failed_tries = 0;
@@ -80,27 +94,42 @@ fn main() {
     //     b: 0.1
     // };
 
+
     for _ in 0..2_000_000 {
+    // for i in 0..40 {
         let between = Range::new(0.0, WIDTH as f64);
         let between_y = Range::new(0.0, HEIGHT as f64);
 
         let x = between.ind_sample(&mut rng);
         let y = between_y.ind_sample(&mut rng);
 
+        // containers - for circle use in_circle not in_polygon
         // rect
-        // let x_points = vec![32.0, 200.0, 200.0, 32.0];
-        // let y_points = vec![200.0, 200.0, 32.0, 32.0];
+        let x_points = vec![150.0, 450.0, 450.0, 150.0];
+        let y_points = vec![300.0, 300.0, 100.0, 100.0];
 
         // triangle
         // let x_points = vec![32.0, 100.0, 100.0];
         // let y_points = vec![32.0, 100.0, 32.0];
 
         // star
-        let x_points = vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0];
-        let y_points = vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0];
-        let circle = Circle::new(x, y, radius, &colour);
+        // let x_points = vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0];
+        // let y_points = vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0];
 
-        // if is_valid(&circle, &circles) {
+        let between = Range::new(0.0, 0.6);
+        let darken_between = Range::new(0.4, 1.0);
+        let mut rng = rand::thread_rng();
+        let chance = between.ind_sample(&mut rng);
+        let colour_wobble = match chance {
+            x if x > 0.0 && x < 0.2 => colour.lighten(between.ind_sample(&mut rng)),
+            x if x > 0.3 && x < 0.6 => colour.darken(darken_between.ind_sample(&mut rng)),
+            _ => Rgb { r: colour.r, g: colour.g, b: colour.b }
+        };
+
+        // let circle = Circle::new(x, y, radius, colour_wobble);
+        let circle = Triangle { x, y, size: radius, colour: colour_wobble };
+
+        // if in_circle(&circle, &circles) {
         //     circles.push(circle);
         // } else {
         if in_polygon(x_points, y_points, circle.x, circle.y) {
@@ -120,8 +149,10 @@ fn main() {
         }
     }
 
+
     println!("{:?}", circles.len());
     for circle in circles {
+        // println!("{:?}", circle.points());
         circle.draw(&context);
     }
 
