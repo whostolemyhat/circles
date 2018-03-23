@@ -34,6 +34,7 @@ http://gtk-rs.org/docs/cairo/struct.Context.html#method.set_source_rgb
 - allow overlap
 - colour gradiation
 - improve triangle speed
+- make sure all triangle points are in circle/polygon
 
 ## Nice links
 

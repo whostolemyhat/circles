@@ -18,6 +18,9 @@ pub struct Triangle {
 }
 
 impl Triangle {
+    pub fn new(x: f64, y: f64, size: f64, colour: Rgb) -> Self {
+        Triangle { x, y, size, colour }
+    }
     pub fn draw(&self, context: &Context) {
         context.set_source_rgb(self.colour.r, self.colour.g, self.colour.b);
         context.new_path();

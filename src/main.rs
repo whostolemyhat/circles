@@ -6,44 +6,50 @@ use rand::distributions::{ IndependentSample, Range };
 use cairo::{ ImageSurface, Format, Context };
 use std::fs::File;
 
-pub mod circle;
-pub mod triangle;
+// pub mod circle;
+// pub mod triangle;
 pub mod utils;
 pub mod colour;
+pub mod shape;
 
-use circle::Circle;
-use utils::Point;
-use triangle::Triangle;
+// use circle::Circle;
+// use utils::Point;
+// use triangle::Triangle;
+use shape::{ Circle, Triangle, Shape };
 use colour::Rgb;
-
-const RADIUS_MIN: f64 = 2.0;
 
 const WIDTH: i32 = 600;
 const HEIGHT: i32 = 400;
 
-trait Collides<T: HasSize> {
-    fn collides(&self, other: &T) -> bool;
-}
+// trait Collides<T: HasSize> {
+//     fn collides(&self, other: &T) -> bool;
+// }
 
-trait HasSize {
-    fn size(&self) -> f64;
-}
+// trait HasSize {
+//     fn size(&self) -> f64;
+// }
 
-trait HasPoint {
-    fn get_point(&self) -> Point;
-}
+// trait HasPoint {
+//     fn get_point(&self) -> Point;
+// }
 
-fn in_circle<T>(circle: &T) -> bool where T: HasPoint {
+fn in_circle<T>(circle: &T, invert: bool) -> bool where T: Shape {
     let container_radius: f64 = 180.0;
     let point = circle.get_point();
     if utils::dist(point.x, point.y, WIDTH as f64 / 2.0, HEIGHT as f64 / 2.0) > container_radius {
+        if invert {
+            return true;
+        }
         return false;
     }
 
+    if invert {
+        return false;
+    }
     true
 }
 
-fn collision<T: Collides<T>>(circle: &T, shapes: &Vec<T>) -> bool where T: HasSize{
+fn collision<T>(circle: &T, shapes: &Vec<T>) -> bool where T: Shape{
     for s in shapes {
         if circle.collides(s) {
             return true;
@@ -52,7 +58,7 @@ fn collision<T: Collides<T>>(circle: &T, shapes: &Vec<T>) -> bool where T: HasSi
     false
 }
 
-fn in_polygon(polygon_x_points: Vec<f64>, polygon_y_points: Vec<f64>, x: f64, y: f64) -> bool {
+fn in_polygon(polygon_x_points: Vec<f64>, polygon_y_points: Vec<f64>, x: f64, y: f64, invert: bool) -> bool {
     // if polygon_x_points.len() == 0 && polygon_y_points.len() == 0 {
     //     return false;
     // }
@@ -71,20 +77,41 @@ fn in_polygon(polygon_x_points: Vec<f64>, polygon_y_points: Vec<f64>, x: f64, y:
         j = i;
     }
 
+    if invert {
+        return !c;
+    }
+
     c
+}
+
+enum Particle {
+    Circle,
+    Triangle
+}
+
+enum Container {
+    Circle,
+    Star,
+    Triangle,
+    Rectangle
 }
 
 fn main() {
     let mut radius = 32.0;
+    let radius_min: f64 = 2.0;
+    let mut failed_tries = 0;
+
+    let max_tries = 80_000;
+    let container = Container::Circle;
+    let invert = false;
+    let particle = Particle::Circle; // circle, triangle
 
     let surface = ImageSurface::create(Format::ARgb32, WIDTH, HEIGHT)
         .expect("Couldn't create surface");
     let context = Context::new(&surface);
-    let mut circles: Vec<Circle> = vec![];
-    // let mut circles: Vec<Triangle> = vec![];
+
     let mut rng = rand::thread_rng();
 
-    let mut failed_tries = 0;
 
     let colour_range = Range::new(0.0, 1.0);
 
@@ -94,15 +121,10 @@ fn main() {
         b: colour_range.ind_sample(&mut rng)
     };
 
-    // let colour = Rgb {
-    //     r: 0.8,
-    //     g: 0.2,
-    //     b: 0.1
-    // };
+    let mut circles = Vec::new();
+    // let flag = true;
 
-
-    // for _ in 0..2_000_000 {
-    for _ in 0..80000 {
+    for _ in 0..max_tries {
         let between = Range::new(0.0, WIDTH as f64);
         let between_y = Range::new(0.0, HEIGHT as f64);
 
@@ -122,9 +144,12 @@ fn main() {
         // let x_points = vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0];
         // let y_points = vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0];
 
-        // nothing
-        let x_points = vec![0.0, 600.0];
-        let y_points = vec![0.0, 400.0];
+        let (x_points, y_points) = match container {
+            Container::Star => (vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0], vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0]),
+            Container::Triangle => (vec![32.0, 200.0, 200.0], vec![32.0, 200.0, 32.0]),
+            Container::Rectangle => (vec![150.0, 450.0, 450.0, 150.0], vec![300.0, 300.0, 100.0, 100.0]),
+            Container::Circle => (vec![], vec![])
+        };
 
         let between = Range::new(0.0, 0.6);
         let darken_between = Range::new(0.4, 1.0);
@@ -136,17 +161,35 @@ fn main() {
             _ => Rgb { r: colour.r, g: colour.g, b: colour.b }
         };
 
-        let circle = Circle::new(x, y, radius, colour_wobble);
-        // let circle = Triangle { x, y, size: radius, colour: colour_wobble };
+        let shape = Circle::new(x, y, radius, colour_wobble);
+        // let circle = match particle {
+        //     Particle::Circle => Circle::new(x, y, radius, colour_wobble),
+        //     Particle::Triangle => Triangle::new(x, y, radius, colour_wobble)
+        // };
+        // let circle = Circle::new(x, y, radius, colour_wobble);
+        // let shape = Triangle::new(x, y, radius, colour_wobble);
+        // match particle {
+        //     Particle::Circle => {
+        //         let shape = Circle::new(x, y, radius, colour_wobble);
+        //         pack(shape, radius, circles, flag, x_points, y_points, invert);
+        //     },
+        //     Particle::Triangle => {
+        //         let shape = Triangle::new(x, y, radius, colour_wobble);
+        //         pack(shape, radius, circles, flag, x_points, y_points, invert);
+        //     }
+        // };
 
-        if !in_circle(&circle) {
-            if !collision(&circle, &circles) {
-                circles.push(circle);
+        // if Container::Circle
+        if in_circle(&shape, invert) {
+            if !collision(&shape, &circles) {
+                circles.push(shape);
             }
         } else {
-        // if in_polygon(x_points, y_points, circle.x, circle.y) {
-        //     if !collision(&circle, &circles) {
-        //         circles.push(circle);
+        // if !Container::Circle
+        // let point = shape.get_point();
+        // if in_polygon(x_points, y_points, point.x, point.y, invert) {
+        //     if !collision(&shape, &circles) {
+        //         circles.push(shape);
         //     }
         // } else {
             failed_tries += 1;
@@ -154,7 +197,7 @@ fn main() {
                 radius /= 2.0;
                 failed_tries = 0;
 
-                if radius < RADIUS_MIN {
+                if radius < radius_min {
                     break;
                 }
             }
@@ -171,3 +214,32 @@ fn main() {
     let mut file = File::create("circles.png").unwrap();
     surface.write_to_png(&mut file).unwrap();
 }
+
+// fn pack<T>(shape: T, radius: f64, circles: Vec<T>, flag: bool, x_points: Vec<f64>, y_points: Vec<f64>, invert: bool) where T: Shape {
+//     let radius_min: f64 = 2.0;
+//     let mut failed_tries = 0;
+
+//     let mut circles = Vec::new();
+
+//     // if in_circle(&shape, invert) {
+//     //     if !collision(&shape, &circles) {
+//     //         circles.push(shape);
+//     //     }
+//     // } else {
+//     let point = shape.get_point();
+//     if in_polygon(x_points, y_points, point.x, point.y, invert) {
+//         if !collision(&shape, &circles) {
+//             circles.push(shape);
+//         }
+//     } else {
+//         failed_tries += 1;
+//         if failed_tries as f64 > (32 * 1024) as f64 / radius {
+//             radius /= 2.0;
+//             failed_tries = 0;
+
+//             if radius < radius_min {
+//                 flag = false;
+//             }
+//         }
+//     }
+// }
