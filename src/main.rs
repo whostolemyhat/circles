@@ -41,7 +41,7 @@ fn collision<T>(circle: &T, shapes: &Vec<T>) -> bool where T: Shape{
     false
 }
 
-fn in_polygon(polygon_x_points: Vec<f64>, polygon_y_points: Vec<f64>, x: f64, y: f64, invert: bool) -> bool {
+fn in_polygon(polygon_x_points: &Vec<f64>, polygon_y_points: &Vec<f64>, x: f64, y: f64, invert: bool) -> bool {
     // if polygon_x_points.len() == 0 && polygon_y_points.len() == 0 {
     //     return false;
     // }
@@ -79,6 +79,20 @@ enum Container {
     Rectangle
 }
 
+fn wobble_colour(colour: &Rgb) -> Rgb {
+    let between = Range::new(0.0, 0.6);
+    let darken_between = Range::new(0.4, 1.0);
+    let mut rng = rand::thread_rng();
+    let chance = between.ind_sample(&mut rng);
+    let colour_wobble = match chance {
+        x if x > 0.0 && x < 0.2 => colour.lighten(between.ind_sample(&mut rng)),
+        x if x > 0.3 && x < 0.6 => colour.darken(darken_between.ind_sample(&mut rng)),
+        _ => Rgb { r: colour.r, g: colour.g, b: colour.b }
+    };
+
+    colour_wobble
+}
+
 fn main() {
     let mut radius = 32.0;
     let radius_min: f64 = 2.0;
@@ -87,7 +101,7 @@ fn main() {
     let max_tries = 80_000;
     let container = Container::Circle;
     let invert = false;
-    let particle = Particle::Circle; // circle, triangle
+    let particle = Particle::Circle;
 
     let surface = ImageSurface::create(Format::ARgb32, WIDTH, HEIGHT)
         .expect("Couldn't create surface");
@@ -105,8 +119,13 @@ fn main() {
     };
 
     let mut circles = Vec::new();
-    // let flag = true;
 
+    let (x_points, y_points) = match container {
+        Container::Star => (vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0], vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0]),
+        Container::Triangle => (vec![32.0, 200.0, 200.0], vec![32.0, 200.0, 32.0]),
+        Container::Rectangle => (vec![150.0, 450.0, 450.0, 150.0], vec![300.0, 300.0, 100.0, 100.0]),
+        Container::Circle => (vec![], vec![])
+    };
     for _ in 0..max_tries {
         let between = Range::new(0.0, WIDTH as f64);
         let between_y = Range::new(0.0, HEIGHT as f64);
@@ -114,35 +133,7 @@ fn main() {
         let x = between.ind_sample(&mut rng);
         let y = between_y.ind_sample(&mut rng);
 
-        // containers - for circle use in_circle not in_polygon
-        // rect
-        // let x_points = vec![150.0, 450.0, 450.0, 150.0];
-        // let y_points = vec![300.0, 300.0, 100.0, 100.0];
-
-        // triangle
-        // let x_points = vec![32.0, 200.0, 200.0];
-        // let y_points = vec![32.0, 200.0, 32.0];
-
-        // star
-        // let x_points = vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0];
-        // let y_points = vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0];
-
-        let (x_points, y_points) = match container {
-            Container::Star => (vec![20.0, 95.0, 120.0, 145.0, 220.0, 170.0, 180.0, 120.0, 60.0, 70.0, 20.0], vec![85.0, 75.0, 10.0, 75.0, 85.0, 125.0, 190.0, 150.0, 190.0, 125.0, 85.0]),
-            Container::Triangle => (vec![32.0, 200.0, 200.0], vec![32.0, 200.0, 32.0]),
-            Container::Rectangle => (vec![150.0, 450.0, 450.0, 150.0], vec![300.0, 300.0, 100.0, 100.0]),
-            Container::Circle => (vec![], vec![])
-        };
-
-        let between = Range::new(0.0, 0.6);
-        let darken_between = Range::new(0.4, 1.0);
-        let mut rng = rand::thread_rng();
-        let chance = between.ind_sample(&mut rng);
-        let colour_wobble = match chance {
-            x if x > 0.0 && x < 0.2 => colour.lighten(between.ind_sample(&mut rng)),
-            x if x > 0.3 && x < 0.6 => colour.darken(darken_between.ind_sample(&mut rng)),
-            _ => Rgb { r: colour.r, g: colour.g, b: colour.b }
-        };
+        let colour_wobble = wobble_colour(&colour);
 
         let shape = Circle::new(x, y, radius, colour_wobble);
         // let circle = match particle {
@@ -162,35 +153,53 @@ fn main() {
         //     }
         // };
 
-        // if Container::Circle
-        if in_circle(&shape, invert) {
-            if !collision(&shape, &circles) {
-                circles.push(shape);
-            }
-        } else {
-        // if !Container::Circle
-        // let point = shape.get_point();
-        // if in_polygon(x_points, y_points, point.x, point.y, invert) {
-        //     if !collision(&shape, &circles) {
-        //         circles.push(shape);
-        //     }
-        // } else {
-            failed_tries += 1;
-            if failed_tries as f64 > (32 * 1024) as f64 / radius {
-                radius /= 2.0;
-                failed_tries = 0;
+        let mut flag = true;
 
-                if radius < radius_min {
-                    break;
+        match container {
+            Container::Circle => {
+                if in_circle(&shape, invert) {
+                    if !collision(&shape, &circles) {
+                        circles.push(shape);
+                    }
+                } else {
+                    failed_tries += 1;
+                    if failed_tries as f64 > (32 * 1024) as f64 / radius {
+                        radius /= 2.0;
+                        failed_tries = 0;
+
+                        if radius < radius_min {
+                            flag = false;
+                        }
+                    }
+                }
+            }
+            _ => {
+                let point = shape.get_point();
+                if in_polygon(&x_points, &y_points, point.x, point.y, invert) {
+                    if !collision(&shape, &circles) {
+                        circles.push(shape);
+                    }
+                } else {
+                    failed_tries += 1;
+                    if failed_tries as f64 > (32 * 1024) as f64 / radius {
+                        radius /= 2.0;
+                        failed_tries = 0;
+
+                        if radius < radius_min {
+                            flag = false;
+                        }
+                    }
                 }
             }
         }
-    }
 
+        if !flag {
+            break;
+        }
+    }
 
     println!("{:?}", circles.len());
     for circle in circles {
-        // println!("{:?}", circle.points());
         circle.draw(&context);
     }
 
