@@ -6,32 +6,15 @@ use rand::distributions::{ IndependentSample, Range };
 use cairo::{ ImageSurface, Format, Context };
 use std::fs::File;
 
-// pub mod circle;
-// pub mod triangle;
 pub mod utils;
 pub mod colour;
 pub mod shape;
 
-// use circle::Circle;
-// use utils::Point;
-// use triangle::Triangle;
 use shape::{ Circle, Triangle, Shape };
 use colour::Rgb;
 
 const WIDTH: i32 = 600;
 const HEIGHT: i32 = 400;
-
-// trait Collides<T: HasSize> {
-//     fn collides(&self, other: &T) -> bool;
-// }
-
-// trait HasSize {
-//     fn size(&self) -> f64;
-// }
-
-// trait HasPoint {
-//     fn get_point(&self) -> Point;
-// }
 
 fn in_circle<T>(circle: &T, invert: bool) -> bool where T: Shape {
     let container_radius: f64 = 180.0;

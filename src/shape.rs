@@ -1,9 +1,3 @@
-// struct Shape {
-//     colour: Rgb,
-//     origin: Point,
-//     size: f64
-// }
-
 use colour::Rgb;
 use utils::Point;
 use cairo::Context;
