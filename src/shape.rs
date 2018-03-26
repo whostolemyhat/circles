@@ -6,24 +6,25 @@ use utils::dist;
 const MARGIN: f64 = 0.5;
 
 pub trait Shape {
-    fn new(x: f64, y: f64, size: f64, colour: Rgb) -> Self;
     fn draw(&self, context: &Context);
-    fn collides(&self, other: &Self) -> bool;
+    fn collides(&self, point: Point, size: f64) -> bool;
     fn get_point(&self) -> Point;
+    fn get_size(&self) -> f64;
 }
 
 pub struct Circle {
-    colour: Rgb,
-    origin: Point,
-    size: f64
+    pub colour: Rgb,
+    pub origin: Point,
+    pub size: f64
 }
 impl Shape for Circle {
-    fn new(x: f64, y: f64, size: f64, colour: Rgb) -> Self {
-        Self { origin: Point { x, y }, size, colour }
-    }
+    // new() doesn't take &self (ie static method), so can't be part of Box
+    // fn new(x: f64, y: f64, size: f64, colour: Rgb) -> Self {
+    //     Self { origin: Point { x, y }, size, colour }
+    // }
 
     fn get_point(&self) -> Point {
-        self.origin.clone()
+        Point { x: self.origin.x, y: self.origin.y }
     }
 
     fn draw(&self, context: &Context) {
@@ -32,21 +33,22 @@ impl Shape for Circle {
         context.fill();
     }
 
-    fn collides(&self, other: &Circle) -> bool {
-        dist(self.origin.x, self.origin.y, other.origin.x, other.origin.y) < (self.size + other.size + MARGIN)
+    // can't take Self or T without things getting really out of hand in generics
+    fn collides(&self, point: Point, size: f64) -> bool {
+        dist(self.origin.x, self.origin.y, point.x, point.y) < (self.size + size + MARGIN)
+    }
+
+    fn get_size(&self) -> f64 {
+        self.size
     }
 }
 
 pub struct Triangle {
-    colour: Rgb,
-    origin: Point,
-    size: f64
+    pub colour: Rgb,
+    pub origin: Point,
+    pub size: f64
 }
 impl Shape for Triangle {
-    fn new(x: f64, y: f64, size: f64, colour: Rgb) -> Self {
-        Triangle { origin: Point { x, y }, size, colour }
-    }
-
     fn get_point(&self) -> Point {
         self.origin.clone()
     }
@@ -61,36 +63,40 @@ impl Shape for Triangle {
         context.fill();
     }
 
-    fn collides(&self, other: &Triangle) -> bool {
-        let points = self.points();
-        let other_points = other.points();
+    fn collides(&self, point: Point, size: f64) -> bool {
+        let own_points = points(&self.origin, &self.size);
+        let other_points = points(&point, &size);
 
-        for point in &points {
+        for point in &own_points {
             if point_in_triangle(&point, &other_points[0], &other_points[1], &other_points[2]) {
                 return true;
             }
         }
 
         for point in other_points {
-            if point_in_triangle(&point, &points[0], &points[1], &points[2]) {
+            if point_in_triangle(&point, &own_points[0], &own_points[1], &own_points[2]) {
                 return true;
             }
         }
 
         false
     }
-}
 
-impl Triangle {
-    fn points(&self) -> Vec<Point> {
-        let mut points = vec![];
-        points.push(Point { x: self.origin.x, y: self.origin.y });
-        points.push(Point { x: self.origin.x - self.size, y: self.origin.y });
-        points.push(Point { x: self.origin.x, y: self.origin.y - self.size });
-
-        points
+    fn get_size(&self) -> f64 {
+        self.size
     }
 }
+
+
+fn points(point: &Point, size: &f64) -> Vec<Point> {
+    let mut points = vec![];
+    points.push(Point { x: point.x, y: point.y });
+    points.push(Point { x: point.x - size, y: point.y });
+    points.push(Point { x: point.x, y: point.y - size });
+
+    points
+}
+
 
 fn dot(u: &Vec<f64>, v: &Vec<f64>) -> f64 {
     u[0] * v[0] + u[1] * v[1]

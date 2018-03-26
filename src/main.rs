@@ -10,13 +10,14 @@ pub mod utils;
 pub mod colour;
 pub mod shape;
 
+use utils::Point;
 use shape::{ Circle, Triangle, Shape };
 use colour::Rgb;
 
 const WIDTH: i32 = 600;
 const HEIGHT: i32 = 400;
 
-fn in_circle<T>(circle: &T, invert: bool) -> bool where T: Shape {
+fn in_circle<T: ?Sized>(circle: &Box<T>, invert: bool) -> bool where T: Shape {
     let container_radius: f64 = 180.0;
     let point = circle.get_point();
     if utils::dist(point.x, point.y, WIDTH as f64 / 2.0, HEIGHT as f64 / 2.0) > container_radius {
@@ -32,9 +33,9 @@ fn in_circle<T>(circle: &T, invert: bool) -> bool where T: Shape {
     true
 }
 
-fn collision<T>(circle: &T, shapes: &Vec<T>) -> bool where T: Shape{
+fn collision<T: ?Sized>(circle: &Box<T>, shapes: &Vec<Box<T>>) -> bool where T: Shape {
     for s in shapes {
-        if circle.collides(s) {
+        if circle.collides(s.get_point(), s.get_size()) {
             return true;
         }
     }
@@ -42,10 +43,6 @@ fn collision<T>(circle: &T, shapes: &Vec<T>) -> bool where T: Shape{
 }
 
 fn in_polygon(polygon_x_points: &Vec<f64>, polygon_y_points: &Vec<f64>, x: f64, y: f64, invert: bool) -> bool {
-    // if polygon_x_points.len() == 0 && polygon_y_points.len() == 0 {
-    //     return false;
-    // }
-
     let mut c = false;
     let mut j = polygon_x_points.len() - 1;
 
@@ -67,12 +64,12 @@ fn in_polygon(polygon_x_points: &Vec<f64>, polygon_y_points: &Vec<f64>, x: f64, 
     c
 }
 
-enum Particle {
+pub enum Particle {
     Circle,
     Triangle
 }
 
-enum Container {
+pub enum Container {
     Circle,
     Star,
     Triangle,
@@ -101,7 +98,7 @@ fn main() {
     let max_tries = 80_000;
     let container = Container::Circle;
     let invert = false;
-    let particle = Particle::Circle;
+    let particle = Particle::Triangle;
 
     let surface = ImageSurface::create(Format::ARgb32, WIDTH, HEIGHT)
         .expect("Couldn't create surface");
@@ -135,23 +132,11 @@ fn main() {
 
         let colour_wobble = wobble_colour(&colour);
 
-        let shape = Circle::new(x, y, radius, colour_wobble);
-        // let circle = match particle {
-        //     Particle::Circle => Circle::new(x, y, radius, colour_wobble),
-        //     Particle::Triangle => Triangle::new(x, y, radius, colour_wobble)
-        // };
-        // let circle = Circle::new(x, y, radius, colour_wobble);
-        // let shape = Triangle::new(x, y, radius, colour_wobble);
-        // match particle {
-        //     Particle::Circle => {
-        //         let shape = Circle::new(x, y, radius, colour_wobble);
-        //         pack(shape, radius, circles, flag, x_points, y_points, invert);
-        //     },
-        //     Particle::Triangle => {
-        //         let shape = Triangle::new(x, y, radius, colour_wobble);
-        //         pack(shape, radius, circles, flag, x_points, y_points, invert);
-        //     }
-        // };
+        let shape: Box<Shape> = match particle {
+            // need to wrap in Box to return different things which implement the same trait
+            Particle::Circle => Box::new(Circle{ origin: Point { x, y }, size: radius, colour: colour_wobble }),
+            Particle::Triangle => Box::new(Triangle{ origin: Point { x, y }, size: radius, colour: colour_wobble })
+        };
 
         let mut flag = true;
 
