@@ -34,6 +34,7 @@ impl Shape for Circle {
     }
 
     // can't take Self or T without things getting really out of hand in generics
+    // (trait can't be made into an object)
     fn collides(&self, point: Point, size: f64) -> bool {
         dist(self.origin.x, self.origin.y, point.x, point.y) < (self.size + size + MARGIN)
     }

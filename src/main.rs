@@ -14,11 +14,12 @@ use utils::Point;
 use shape::{ Circle, Triangle, Shape };
 use colour::Rgb;
 
-const WIDTH: i32 = 600;
-const HEIGHT: i32 = 400;
+const WIDTH: i32 = 2100;
+const HEIGHT: i32 = 1400;
 
+// don't know size of Shape
 fn in_circle<T: ?Sized>(circle: &Box<T>, invert: bool) -> bool where T: Shape {
-    let container_radius: f64 = 180.0;
+    let container_radius: f64 = 300.0;
     let point = circle.get_point();
     if utils::dist(point.x, point.y, WIDTH as f64 / 2.0, HEIGHT as f64 / 2.0) > container_radius {
         if invert {
@@ -91,14 +92,14 @@ fn wobble_colour(colour: &Rgb) -> Rgb {
 }
 
 fn main() {
-    let mut radius = 32.0;
-    let radius_min: f64 = 2.0;
+    let mut radius = 128.0;
+    let radius_min: f64 = 8.0;
     let mut failed_tries = 0;
-
-    let max_tries = 80_000;
+    let max_loop = 1_800_000;
+    let max_tries = 128 * 1024;
     let container = Container::Circle;
-    let invert = false;
-    let particle = Particle::Triangle;
+    let invert = true;
+    let particle = Particle::Circle;
 
     let surface = ImageSurface::create(Format::ARgb32, WIDTH, HEIGHT)
         .expect("Couldn't create surface");
@@ -123,7 +124,7 @@ fn main() {
         Container::Rectangle => (vec![150.0, 450.0, 450.0, 150.0], vec![300.0, 300.0, 100.0, 100.0]),
         Container::Circle => (vec![], vec![])
     };
-    for _ in 0..max_tries {
+    for _ in 0..max_loop {
         let between = Range::new(0.0, WIDTH as f64);
         let between_y = Range::new(0.0, HEIGHT as f64);
 
@@ -148,7 +149,7 @@ fn main() {
                     }
                 } else {
                     failed_tries += 1;
-                    if failed_tries as f64 > (32 * 1024) as f64 / radius {
+                    if failed_tries as f64 > max_tries as f64 / radius {
                         radius /= 2.0;
                         failed_tries = 0;
 
